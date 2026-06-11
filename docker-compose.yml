@@ -1,0 +1,20 @@
+services:
+  fastsheets:
+    build: .
+    ports:
+      - "5014:5014"
+    environment:
+      FASTSHEETS_DB: /data/fastsheets.sqlite
+      FASTSHEETS_PORT: "5014"
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-xai}
+      MODEL_NAME: ${MODEL_NAME:-grok-4-1-fast-reasoning}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      FASTSHEETS_ADMIN_PASSWORD: ${FASTSHEETS_ADMIN_PASSWORD:-FastSheets2026$$}
+      FASTSHEETS_SECRET: ${FASTSHEETS_SECRET:-}
+    volumes:
+      - fastsheets-data:/data
+volumes:
+  fastsheets-data:
