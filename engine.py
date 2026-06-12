@@ -178,4 +178,31 @@ class Sheet:
         if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
             v = self._walk(node.operand)
             return v if isinstance(node.op, ast.UAdd) else -v
+        if isinstance(node, ast.Compare) and len(node.ops) == 1:
+            return 1.0 if self._compare(self._walk(node.left), node.ops[0],
+                                        self._walk(node.comparators[0])) else 0.0
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            return self._call(node.func.id.upper(), node.args)
         raise ValueError("unsupported expression")
+
+    def _compare(self, a, op, b):
+        return {ast.Lt: a < b, ast.Gt: a > b, ast.LtE: a <= b, ast.GtE: a >= b,
+                ast.Eq: a == b, ast.NotEq: a != b}.get(type(op), False)
+
+    def _call(self, name, args):
+        # IF evaluates its condition then only the chosen branch
+        if name == "IF":
+            cond = self._walk(args[0])
+            return self._walk(args[1] if cond else args[2])
+        vals = [self._walk(a) for a in args]
+        if name == "ROUND":
+            return round(vals[0], int(vals[1]) if len(vals) > 1 else 0)
+        if name == "ABS":
+            return abs(vals[0])
+        if name == "SQRT":
+            return vals[0] ** 0.5
+        if name == "INT":
+            return float(int(vals[0]))
+        if name in ("MIN", "MAX"):  # scalar forms (range forms handled earlier)
+            return (min if name == "MIN" else max)(vals)
+        raise ValueError(f"unknown function {name}")

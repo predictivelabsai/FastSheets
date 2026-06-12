@@ -75,11 +75,18 @@ def sheet_view(sid, sel=None):
              method="post", action=f"/sheet/{sid}/cell"),
         cls="fbar")
 
+    grow = Div(
+        Form(Input(type="hidden", name="add_rows", value="5"),
+             Button("＋ 5 rows", cls="btn", type="submit"), method="post", action=f"/sheet/{sid}/grow", style="display:inline;"),
+        Form(Input(type="hidden", name="add_cols", value="2"),
+             Button("＋ 2 cols", cls="btn", type="submit"), method="post", action=f"/sheet/{sid}/grow", style="display:inline;"),
+        cls="grow-bar", style="display:flex;gap:8px;margin-top:10px;")
     return (_title(s["title"], f"{nrows}×{ncols}", A("← All sheets", href="/", cls="btn")),
-            fbar, grid,
+            fbar, grid, grow,
             P(NotStr("Click a cell to select it, then edit in the bar above. Formulas start with "
-                     "<code>=</code> — try <code>=SUM(B2:B6)</code>, <code>=AVERAGE(...)</code>, "
-                     "<code>=A1*C1</code>, <code>=D2*8%</code>."), cls="hint"))
+                     "<code>=</code> — try <code>=SUM(B2:B6)</code>, <code>=AVERAGE(A1:A3)</code>, "
+                     "<code>=IF(A1&gt;100, A1*0.9, A1)</code>, <code>=ROUND(B2/C2, 2)</code>, "
+                     "<code>=ABS(A1-B1)</code>, <code>=D2*8%</code>."), cls="hint"))
 
 
 def new_sheet_view():

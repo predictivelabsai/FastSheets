@@ -10,9 +10,10 @@ DB_PATH = os.getenv("FASTSHEETS_DB") or str(Path(__file__).parent / "fastsheets.
 
 
 def connect():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 5000")
     return conn
 
 
@@ -107,3 +108,9 @@ def create_sheet(title, n_rows=20, n_cols=8, cell_map=None):
             for (r, c), raw in cell_map.items():
                 conn.execute("INSERT INTO cells(sheet_id,row,col,raw) VALUES (?,?,?,?)", (sid, r, c, raw))
     return sid
+
+
+def grow_sheet(sid: int, add_rows: int = 0, add_cols: int = 0):
+    with cursor() as conn:
+        conn.execute("UPDATE sheets SET n_rows = MIN(100, n_rows + ?), n_cols = MIN(26, n_cols + ?) WHERE id=?",
+                     (max(0, add_rows), max(0, add_cols), sid))

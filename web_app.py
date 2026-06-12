@@ -111,6 +111,14 @@ def post(session, sid: int, row: int = 0, col: int = 0, raw: str = ""):
     return RedirectResponse(f"/sheet/{sid}?sel={row}_{col}", status_code=303)
 
 
+@rt("/sheet/{sid}/grow")
+def post(session, sid: int, add_rows: int = 0, add_cols: int = 0):
+    if not _user(session):
+        return RedirectResponse("/login", status_code=303)
+    db.grow_sheet(sid, add_rows, add_cols)
+    return RedirectResponse(f"/sheet/{sid}", status_code=303)
+
+
 @rt("/new")
 def get(session):
     return _guard(session, "sheets", views.new_sheet_view)

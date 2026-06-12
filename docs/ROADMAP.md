@@ -19,10 +19,10 @@ real formula engine.
 
 ## Near-term roadmap 🔜
 
-1. **More functions** — `IF`, `ROUND`, `CONCAT`, `VLOOKUP`, date functions.
+1. ✅ **More functions** (done) — IF, ROUND, ABS, SQRT, INT, scalar MIN/MAX, comparisons (CONCAT/VLOOKUP/dates still to come).
 2. **Cell formatting** — number/currency/percent formats, bold, colours
    (Frappe stores style on `Sheet Cell`).
-3. **Add/insert/delete rows & columns**; resize the grid beyond the seeded size.
+3. ✅ **Grow the grid** (done) — add rows/columns; insert/delete rows still to come.
 4. **Copy/paste & fill** — drag-fill a formula down a column (relative refs).
 5. **Charts** — render a chart from a range (reuse FastInsights' Plotly helper).
 6. **Snapshots / undo** — `Sheet Snapshot` + an op log for undo/redo.
