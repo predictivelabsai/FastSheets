@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS cells (
     row           INTEGER NOT NULL,
     col           INTEGER NOT NULL,
     raw           TEXT,
+    fmt           TEXT,                 -- space-separated: currency|percent|comma + bold
     PRIMARY KEY (sheet_id, row, col)
 );
 CREATE TABLE IF NOT EXISTS chat_messages (
@@ -71,6 +72,10 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 def init_schema():
     with cursor() as conn:
         conn.executescript(SCHEMA)
+        # migrate older DBs that predate the fmt column
+        have = {r[1] for r in conn.execute("PRAGMA table_info(cells)").fetchall()}
+        if "fmt" not in have:
+            conn.execute("ALTER TABLE cells ADD COLUMN fmt TEXT")
 
 
 def sheets():
@@ -84,19 +89,92 @@ def sheet(sid):
 
 def cells(sid) -> dict:
     out = {}
-    for r in rows("SELECT row, col, raw FROM cells WHERE sheet_id=?", (sid,)):
+    for r in rows("SELECT row, col, raw FROM cells WHERE sheet_id=? AND raw IS NOT NULL AND raw!=''", (sid,)):
         out[(r["row"], r["col"])] = r["raw"]
     return out
 
 
+def formats(sid) -> dict:
+    out = {}
+    for r in rows("SELECT row, col, fmt FROM cells WHERE sheet_id=? AND fmt IS NOT NULL AND fmt!=''", (sid,)):
+        out[(r["row"], r["col"])] = r["fmt"]
+    return out
+
+
+def get_cell(sid, row, col):
+    return one("SELECT raw, fmt FROM cells WHERE sheet_id=? AND row=? AND col=?", (sid, row, col))
+
+
 def set_cell(sid, row, col, raw):
+    """Set a cell's raw value, preserving any existing format. A row that ends
+    up with neither a value nor a format is removed."""
     with cursor() as conn:
         if raw is None or raw == "":
-            conn.execute("DELETE FROM cells WHERE sheet_id=? AND row=? AND col=?", (sid, row, col))
+            # keep the row only if it still carries a format
+            conn.execute(
+                "UPDATE cells SET raw=NULL WHERE sheet_id=? AND row=? AND col=?", (sid, row, col))
+            conn.execute(
+                "DELETE FROM cells WHERE sheet_id=? AND row=? AND col=? AND (fmt IS NULL OR fmt='')",
+                (sid, row, col))
         else:
             conn.execute("""INSERT INTO cells(sheet_id,row,col,raw) VALUES (?,?,?,?)
                             ON CONFLICT(sheet_id,row,col) DO UPDATE SET raw=excluded.raw""",
                          (sid, row, col, raw))
+
+
+NUMBER_FORMATS = ("currency", "percent", "comma")
+
+
+def toggle_format(sid, row, col, token) -> bool:
+    """Toggle a format token on a cell. Number-style tokens are mutually
+    exclusive; 'bold' is independent. Empty/None clears all formatting."""
+    cur = get_cell(sid, row, col)
+    fmt = set((cur["fmt"] or "").split()) if cur and cur["fmt"] else set()
+    if token == "clear" or token is None:
+        fmt = set()
+    elif token == "bold":
+        fmt ^= {"bold"}
+    elif token in NUMBER_FORMATS:
+        had = token in fmt
+        fmt -= set(NUMBER_FORMATS)
+        if not had:
+            fmt.add(token)
+    else:
+        return False
+    new = " ".join(sorted(fmt))
+    with cursor() as conn:
+        if not new and not (cur and cur["raw"]):
+            conn.execute("DELETE FROM cells WHERE sheet_id=? AND row=? AND col=?", (sid, row, col))
+        else:
+            conn.execute("""INSERT INTO cells(sheet_id,row,col,fmt) VALUES (?,?,?,?)
+                            ON CONFLICT(sheet_id,row,col) DO UPDATE SET fmt=excluded.fmt""",
+                         (sid, row, col, new or None))
+    return True
+
+
+def fill(sid, row, col, direction) -> int:
+    """Copy the selected cell (value + format) across the rest of its row/column,
+    shifting relative cell references in formulas. Returns the number of cells
+    written. direction: 'down' | 'right'."""
+    import engine
+    src = get_cell(sid, row, col)
+    if not src or (not src["raw"] and not src["fmt"]):
+        return 0
+    s = sheet(sid)
+    raw, fmt = src["raw"], src["fmt"]
+    n = 0
+    with cursor() as conn:
+        if direction == "down":
+            targets = [(r, col, r - row, 0) for r in range(row + 1, s["n_rows"])]
+        else:
+            targets = [(row, c, 0, c - col) for c in range(col + 1, s["n_cols"])]
+        for (tr, tc, drow, dcol) in targets:
+            new_raw = engine.shift_formula(raw, drow, dcol) if raw else None
+            conn.execute("""INSERT INTO cells(sheet_id,row,col,raw,fmt) VALUES (?,?,?,?,?)
+                            ON CONFLICT(sheet_id,row,col) DO UPDATE SET raw=excluded.raw, fmt=excluded.fmt""",
+                         (sid, tr, tc, new_raw, fmt))
+            n += 1
+    return n
 
 
 def create_sheet(title, n_rows=20, n_cols=8, cell_map=None):

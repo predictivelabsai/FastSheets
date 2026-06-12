@@ -111,6 +111,22 @@ def post(session, sid: int, row: int = 0, col: int = 0, raw: str = ""):
     return RedirectResponse(f"/sheet/{sid}?sel={row}_{col}", status_code=303)
 
 
+@rt("/sheet/{sid}/format")
+def post(session, sid: int, row: int = 0, col: int = 0, token: str = ""):
+    if not _user(session):
+        return RedirectResponse("/login", status_code=303)
+    db.toggle_format(sid, row, col, token)
+    return RedirectResponse(f"/sheet/{sid}?sel={row}_{col}", status_code=303)
+
+
+@rt("/sheet/{sid}/fill")
+def post(session, sid: int, row: int = 0, col: int = 0, dir: str = "down"):
+    if not _user(session):
+        return RedirectResponse("/login", status_code=303)
+    db.fill(sid, row, col, dir if dir in ("down", "right") else "down")
+    return RedirectResponse(f"/sheet/{sid}?sel={row}_{col}", status_code=303)
+
+
 @rt("/sheet/{sid}/grow")
 def post(session, sid: int, add_rows: int = 0, add_cols: int = 0):
     if not _user(session):
@@ -202,6 +218,8 @@ def _ensure_db():
         logger.info("No database found — seeding sample sheets…")
         import seed
         seed.build()
+    else:
+        db.init_schema()  # idempotent; also runs the fmt-column migration
 
 
 _ensure_db()

@@ -15,15 +15,19 @@ real formula engine.
 | **Formula engine** | client-side | `engine.py` (safe, no `eval`) |
 | Functions | — | SUM/AVERAGE/MIN/MAX/COUNT/PRODUCT |
 | Refs & arithmetic | — | A1, ranges, `+-*/`, `%`, circular-safe |
+| **Cell formatting** | style on `Sheet Cell` | currency / percent / thousands + bold (`cells.fmt`) |
+| **Fill down / right** | drag-fill | copy value+format, shifting relative refs |
 | **AI assistant** | *(not upstream)* | grounded in computed values + formulas |
 
 ## Near-term roadmap 🔜
 
 1. ✅ **More functions** (done) — IF, ROUND, ABS, SQRT, INT, scalar MIN/MAX, comparisons (CONCAT/VLOOKUP/dates still to come).
-2. **Cell formatting** — number/currency/percent formats, bold, colours
-   (Frappe stores style on `Sheet Cell`).
+2. ✅ **Cell formatting** (done) — currency / percent / thousands number formats
+   and bold, toggled from a toolbar and stored on `cells.fmt`; colours still to come.
 3. ✅ **Grow the grid** (done) — add rows/columns; insert/delete rows still to come.
-4. **Copy/paste & fill** — drag-fill a formula down a column (relative refs).
+4. ✅ **Fill down / right** (done) — copies the selected cell's value *and* format
+   across its column/row, shifting relative cell references in formulas
+   (`engine.shift_formula`). Drag-to-fill and paste-from-clipboard still to come.
 5. **Charts** — render a chart from a range (reuse FastInsights' Plotly helper).
 6. **Snapshots / undo** — `Sheet Snapshot` + an op log for undo/redo.
 

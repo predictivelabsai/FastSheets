@@ -57,9 +57,14 @@ table.grid td a{display:block;width:100%;height:100%;padding:5px 8px;color:var(-
 table.grid td.num a{text-align:right;font-variant-numeric:tabular-nums;}
 table.grid td.sel{outline:2px solid var(--accent);outline-offset:-2px;background:var(--accent-light);}
 table.grid td.formula a{color:var(--accent-hover);}
+table.grid td.bold a{font-weight:700;}
 table.grid td a:hover{background:var(--surface-2);}
 .hint{color:var(--text-mute);font-size:12px;margin-top:10px;}
+.fmt-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.fmt-bar form{display:inline;}
+.fmt-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-mute);font-weight:600;}
 .btn{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:13px;}
+.btn.sm{padding:4px 9px;font-size:12px;}
 .btn:hover{background:var(--surface-2);} .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);} .btn.primary:hover{background:var(--accent-hover);}
 .gen-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;max-width:560px;}
 .gen-card input{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-top:8px;}

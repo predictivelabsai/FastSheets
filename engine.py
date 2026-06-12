@@ -43,6 +43,38 @@ def parse_ref(ref: str):
     return int(m.group(2)) - 1, col_to_num(m.group(1))  # (row, col) 0-based
 
 
+def shift_formula(raw: str, drow: int, dcol: int) -> str:
+    """Shift every relative cell reference in a formula by (drow, dcol) — used
+    when filling a formula across cells. Non-formulas are returned unchanged."""
+    if not raw or not raw.startswith("="):
+        return raw
+
+    def _sub(m):
+        nc = col_to_num(m.group(1)) + dcol
+        nr = (int(m.group(2)) - 1) + drow
+        if nc < 0 or nr < 0:
+            return m.group(0)
+        return f"{num_to_col(nc)}{nr + 1}"
+
+    return "=" + REF_RE.sub(_sub, raw[1:])
+
+
+def format_value(val, fmt: str):
+    """Render a numeric value per a cell format string, or None to fall back to
+    the engine's default display. (Bold is handled in CSS, not here.)"""
+    if not isinstance(val, (int, float)) or isinstance(val, bool):
+        return None
+    fmt = fmt or ""
+    if "currency" in fmt:
+        return f"£{val:,.2f}"
+    if "percent" in fmt:
+        return f"{val * 100:,.2f}%"
+    if "comma" in fmt:
+        s = f"{val:,.2f}"
+        return s.rstrip("0").rstrip(".") if "." in s else s
+    return None
+
+
 def _expand_range(a: str, b: str):
     ra, ca = parse_ref(a)
     rb, cb = parse_ref(b)
