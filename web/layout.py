@@ -94,7 +94,8 @@ table.grid td a:hover{background:var(--surface-2);}
 @keyframes pulse{0%,100%{opacity:.35;transform:scale(.85);}50%{opacity:1;transform:scale(1.1);}}
 """
 
-NAV = [("sheets", "Sheets", "📊", "/"), ("ai", "AI Assistant", "🤖", "/ai"), ("guide", "User Guide", "📖", "/guide")]
+NAV = [("sheets", "Sheets", "📊", "/"), ("ai", "AI Assistant", "🤖", "/ai"),
+       ("guide", "User Guide", "📖", "/guide"), ("developers", "Developers", "⌘", "/developers")]
 SAMPLE_QUESTIONS = ["What's the Q1 budget total?", "Explain the formula in E7", "Which rep sold the most?"]
 
 
